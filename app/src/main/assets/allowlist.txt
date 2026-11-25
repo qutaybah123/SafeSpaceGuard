@@ -1,0 +1,3 @@
+# Domains that must never be blocked (recovery and education resources).
+yourbrainonporn.com
+fightthenewdrug.org
