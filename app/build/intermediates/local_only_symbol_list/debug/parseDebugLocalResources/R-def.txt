@@ -1,0 +1,24 @@
+R_DEF: Internal format may change without notice
+local
+color brand
+color brand_dark
+color danger
+color surface_soft
+color text_main
+color text_muted
+id btnAlwaysOn
+id btnPin
+id btnToggle
+id switchStrict
+id tvGuardStatus
+id tvStatus
+layout activity_main
+mipmap ic_launcher
+mipmap ic_launcher_round
+string accessibility_description
+string app_name
+string channel_name
+string notif_text
+string notif_title
+style Theme.SafeSpaceGuard
+xml app_guard_config

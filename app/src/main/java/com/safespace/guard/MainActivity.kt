@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvGuardStatus: TextView
     private lateinit var btnToggle: Button
     private lateinit var btnPin: Button
+    private lateinit var btnAlwaysOn: Button
     private lateinit var switchStrict: Switch
 
     private val handler = Handler(Looper.getMainLooper())
@@ -61,6 +62,7 @@ class MainActivity : AppCompatActivity() {
         tvGuardStatus = findViewById(R.id.tvGuardStatus)
         btnToggle = findViewById(R.id.btnToggle)
         btnPin = findViewById(R.id.btnPin)
+        btnAlwaysOn = findViewById(R.id.btnAlwaysOn)
         switchStrict = findViewById(R.id.switchStrict)
 
         if (Build.VERSION.SDK_INT >= 33 &&
@@ -81,8 +83,12 @@ class MainActivity : AppCompatActivity() {
                         isHeld = false
                         holdRunnable = Runnable {
                             isHeld = true
-                            askPin("Parent PIN to access Accessibility settings") {
-                                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                            if (Store.isProtectionEnabled(this@MainActivity)) {
+                                toast("Please turn protection off first to access accessibility settings.")
+                            } else {
+                                askPin("Parent PIN to access Accessibility settings") {
+                                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                                }
                             }
                         }.also {
                             holdHandler.postDelayed(it, 5000)
@@ -115,6 +121,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Opens the phone's VPN settings so the parent can enable
+        // "Always-on VPN" and "Block connections without VPN".
+        btnAlwaysOn.setOnClickListener {
+            if (Store.isProtectionEnabled(this)) {
+                toast("Turn protection OFF with the PIN first, then set up Always-on VPN.")
+            } else if (Store.hasPin(this)) {
+                askPin("Parent PIN to open VPN settings") { openVpnSettings() }
+            } else {
+                openVpnSettings()
+            }
+        }
+
         ignoreSwitch = true
         switchStrict.isChecked = Store.isStrict(this)
         ignoreSwitch = false
@@ -140,6 +158,14 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         handler.removeCallbacks(refreshLoop)
+    }
+
+    private fun openVpnSettings() {
+        try {
+            startActivity(Intent(Settings.ACTION_VPN_SETTINGS))
+        } catch (e: Exception) {
+            startActivity(Intent(Settings.ACTION_SETTINGS))
+        }
     }
 
     private fun isAccessibilityServiceEnabled(): Boolean {

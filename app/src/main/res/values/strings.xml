@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SafeSpace Guard</string>
+    <string name="accessibility_description">Protects SafeSpace Guard from being turned off or removed without the Parent PIN.</string>
     <string name="channel_name">Protection status</string>
     <string name="notif_title">SafeSpace Guard is protecting this device</string>
     <string name="notif_text">Blocked today: %1$d. Stay focused, stay safe.</string>
