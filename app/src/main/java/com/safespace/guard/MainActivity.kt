@@ -83,10 +83,12 @@ class MainActivity : AppCompatActivity() {
                         isHeld = false
                         holdRunnable = Runnable {
                             isHeld = true
-                            if (Store.isProtectionEnabled(this@MainActivity)) {
-                                toast("Please turn protection off first to access accessibility settings.")
+                            if (!Store.hasPin(this@MainActivity)) {
+                                toast("Set a parent PIN first.")
                             } else {
                                 askPin("Parent PIN to access Accessibility settings") {
+                                    GuardUnlock.open()
+                                    toast("Settings unlocked for 30 seconds")
                                     startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                                 }
                             }
@@ -124,12 +126,14 @@ class MainActivity : AppCompatActivity() {
         // Opens the phone's VPN settings so the parent can enable
         // "Always-on VPN" and "Block connections without VPN".
         btnAlwaysOn.setOnClickListener {
-            if (Store.isProtectionEnabled(this)) {
-                toast("Turn protection OFF with the PIN first, then set up Always-on VPN.")
-            } else if (Store.hasPin(this)) {
-                askPin("Parent PIN to open VPN settings") { openVpnSettings() }
+            if (!Store.hasPin(this)) {
+                toast("Set a parent PIN first.")
             } else {
-                openVpnSettings()
+                askPin("Parent PIN to open VPN settings") {
+                    GuardUnlock.open()
+                    toast("Settings unlocked for 30 seconds")
+                    openVpnSettings()
+                }
             }
         }
 

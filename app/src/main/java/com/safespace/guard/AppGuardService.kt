@@ -40,14 +40,16 @@ class AppGuardService : AccessibilityService() {
         val packageName = event.packageName?.toString() ?: return
         if (packageName == applicationContext.packageName) return
         if (System.currentTimeMillis() - lastBlockTime < COOLDOWN_MS) return
-        if (!Store.isProtectionEnabled(this)) return
 
-        // 1. Other VPN apps
+        // The ONLY thing that pauses the guard: parent entered the PIN (30 seconds).
+        if (GuardUnlock.isOpen()) return
+
+        // 1. Other VPN apps (only matters while protection is switched on)
         val isVpnApp = packageName.contains("vpn", true) ||
                 packageName.contains("proxy", true) ||
                 packageName.contains("tunnel", true)
         if (isVpnApp) {
-            blockAction()
+            if (Store.isProtectionEnabled(this)) blockAction()
             return
         }
 
@@ -136,12 +138,11 @@ class AppGuardService : AccessibilityService() {
         return true
     }
 
-    // ---------- fast text helpers (native search, no full tree dump) ----------
+    // ---------- fast text helpers ----------
 
     private fun hasText(root: AccessibilityNodeInfo, text: String): Boolean =
         !root.findAccessibilityNodeInfosByText(text).isNullOrEmpty()
 
-    /** True if some node's whole text (or description) equals [text]. */
     private fun hasExactText(root: AccessibilityNodeInfo, text: String): Boolean {
         val nodes = root.findAccessibilityNodeInfosByText(text) ?: return false
         return nodes.any {
@@ -152,32 +153,27 @@ class AppGuardService : AccessibilityService() {
 
     // ---------- detectors ----------
 
-    /** Samsung "Check background activity" popup that lists our app. */
     private fun backgroundDialog(root: AccessibilityNodeInfo): Boolean {
         val isDialog = hasText(root, "check background activity") ||
                 hasText(root, "active while running in the background")
         return isDialog && (hasText(root, APP_NAME) || hasText(root, APP_PKG))
     }
 
-    /** Launcher long-press menu / drag-to-uninstall bar (exact texts only). */
     private fun launcherMenuForOurApp(root: AccessibilityNodeInfo): Boolean {
         if (!hasText(root, APP_NAME)) return false
         return LAUNCHER_MENU_ITEMS.any { hasExactText(root, it) }
     }
 
-    /** Settings > Apps > SafeSpace Guard and its Storage page. */
     private fun isAppInfoPage(root: AccessibilityNodeInfo): Boolean {
         if (!hasText(root, APP_NAME)) return false
         return APP_INFO_ACTIONS.any { hasExactText(root, it) }
     }
 
-    /** Accessibility pages that show our service. */
     private fun isAccessibilityPageForOurApp(root: AccessibilityNodeInfo): Boolean {
         if (!hasText(root, APP_NAME) && !hasText(root, APP_PKG)) return false
         return ACCESSIBILITY_MARKERS.any { hasText(root, it) }
     }
 
-    /** VPN settings and background-activity pages. */
     private fun isRestrictedSettingsScreen(root: AccessibilityNodeInfo): Boolean {
         if (!hasText(root, APP_NAME) && !hasText(root, APP_PKG)) return false
 
@@ -221,7 +217,6 @@ class AppGuardService : AccessibilityService() {
         return sb.toString().lowercase()
     }
 
-    /** Roots of all visible windows except our own (popups are separate windows). */
     private fun windowRoots(): List<AccessibilityNodeInfo> {
         val roots = mutableListOf<AccessibilityNodeInfo>()
         try {

@@ -43,6 +43,8 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 ### 3. Setup & Test
 1. Open **SafeSpace Guard** on your device.
 2. Choose and set a **Parent PIN**.
-3. **To enable Accessibility protection:** With protection still **OFF**, press and **hold the protection toggle button for 5 seconds**, enter your Parent PIN when prompted, find **SafeSpace Guard** in Accessibility Services, and turn it **ON**.
+3. **To enable Accessibility protection:** Press and **hold the protection toggle button for 5 seconds**, enter your Parent PIN when prompted, and within 30 seconds find **SafeSpace Guard** in Accessibility Services and turn it **ON**.
 4. Go back to the app and turn protection **ON** (accept the VPN permission prompt).
-5. **To set up Always-on VPN:** Turn protection **OFF** with your Parent PIN, tap **Set up Always-on VPN**, enter your Parent PIN, tap the ⚙️ gear next to **SafeSpace Guard**, and turn on both **Always-on VPN** and **Block connections without VPN**. Then go back and turn protection **ON** again.
+5. **To set up Always-on VPN:** Tap **Set up Always-on VPN**, enter your Parent PIN, and within 30 seconds tap the ⚙️ gear next to **SafeSpace Guard** and turn on both **Always-on VPN** and **Block connections without VPN**.
+
+> **Note:** The VPN settings, Accessibility settings, App info and uninstall screens for SafeSpace Guard are always blocked while the Accessibility Guard is on, even when protection is OFF. Entering the Parent PIN pauses the blocks for 30 seconds, then they turn back on automatically.
