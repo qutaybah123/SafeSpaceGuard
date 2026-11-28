@@ -19,7 +19,6 @@ class AppGuardService : AccessibilityService() {
         private const val APP_NAME = "safespace guard"
         private const val APP_PKG = "com.safespace.guard"
 
-        private val LAUNCHER_MENU_ITEMS = listOf("uninstall", "app info")
         private val APP_INFO_ACTIONS = listOf(
             "force stop", "uninstall", "clear data", "clear cache",
             "clear storage", "manage storage"
@@ -82,17 +81,21 @@ class AppGuardService : AccessibilityService() {
                     blockAction()
                     return
                 }
-                if (type == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED &&
-                    text.contains(APP_NAME)
-                ) {
-                    blockAction()
-                    return
+                // Long-press: block ONLY when the pressed icon itself is our app
+                if (type == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) {
+                    val label = pressedLabel(event)
+                    val ours = label.length < 80 && label.contains(APP_NAME)
+                    Log.d(TAG, "LONG-CLICK pkg=$packageName ours=$ours label=[$label]")
+                    if (ours) {
+                        blockAction()
+                        return
+                    }
                 }
             }
 
             if (isWindowEvent && shouldScan(type)) {
                 for (root in windowRoots()) {
-                    if (backgroundDialog(root) || launcherMenuForOurApp(root)) {
+                    if (backgroundDialog(root)) {
                         blockAction()
                         return
                     }
@@ -159,9 +162,27 @@ class AppGuardService : AccessibilityService() {
         return isDialog && (hasText(root, APP_NAME) || hasText(root, APP_PKG))
     }
 
-    private fun launcherMenuForOurApp(root: AccessibilityNodeInfo): Boolean {
-        if (!hasText(root, APP_NAME)) return false
-        return LAUNCHER_MENU_ITEMS.any { hasExactText(root, it) }
+    /**
+     * Text of the pressed item ONLY: its own text/description and its direct
+     * children. Never the parent, because a grid parent can hold every app label.
+     */
+    private fun pressedLabel(event: AccessibilityEvent): String {
+        val sb = StringBuilder()
+        val src = event.source
+        if (src != null) {
+            src.text?.let { sb.append(it).append(' ') }
+            src.contentDescription?.let { sb.append(it).append(' ') }
+            for (i in 0 until src.childCount) {
+                val c = src.getChild(i) ?: continue
+                c.text?.let { sb.append(it).append(' ') }
+                c.contentDescription?.let { sb.append(it).append(' ') }
+            }
+        } else {
+            val t = event.text
+            if (t != null && t.size <= 2) t.forEach { sb.append(it).append(' ') }
+            event.contentDescription?.let { sb.append(it).append(' ') }
+        }
+        return sb.toString().trim().lowercase()
     }
 
     private fun isAppInfoPage(root: AccessibilityNodeInfo): Boolean {
